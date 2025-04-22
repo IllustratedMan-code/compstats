@@ -1,0 +1,8 @@
+{
+  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
+  "editor.formatOnType": true,
+  "[commonlisp]": {
+    "editor.wordSeparators": "`|;:'\",()"
+  },
+  "r.lsp.promptToInstall": false
+}

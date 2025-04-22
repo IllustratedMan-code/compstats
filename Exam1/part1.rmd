@@ -1,0 +1,159 @@
+---
+title: Exam 1 (Part 1)
+author: David Lewis
+date: March 25, 2025
+---
+
+```{r include=FALSE}
+library(printr)
+```
+
+> Note that I used special rmarkdown syntax to embed some results directly into my prose.
+> you can see the rmarkdown file for more details
+
+# Question 1
+
+```{r}
+data <- 90 * 1:100 - (1:100)^2 + 1000
+```
+
+## What is the first, the seventeenth and the last entry of the vector data?
+
+The first member of the vector is `r data[1]`.
+The 17th member of the vector is `r data[17]`.
+The last member of the vector is `r data[length(data)]`
+
+
+## What is the maximum of the vector data? At which index is the maximum attained?
+The maximum member of the vector is `r max(data)`.
+The index of this maximum is `r which.max(data)`.
+
+## Plot the vector data with plot(data) and visually confirm your last result.
+
+```{r}
+plot(data)
+y <- max(data)
+x <- which.max(data)
+
+arrows(x, y - 1000, x, y - 10)
+```
+
+The arrow points the max entry, confirming the last result.
+
+
+## At which indices are the entries of data between 2000 and 2500?
+
+Assuming "between" is not inclusive.
+
+```{r}
+index <- which(data > 2000 & data < 2500)
+```
+
+The indices that are between 2000 and 2500 are `r index` .
+
+# Question 2
+
+```{r}
+m <- matrix(11:35, nrow = 5, byrow = TRUE)
+```
+
+## What is the entry in the third row and forth column? 
+
+The entry in the third row and 4th column is `r m[3,4]`
+
+
+## Briefly describe in words what `m[2:4,3:5]` returns.
+
+The syntax `2:4` represents a range of numbers from 2 to 4, i.e (2,3,4). So in this case `m[2:4, 3:5]` is 
+a submatrix of m containing the 2,3,4 rows and 3,4,5 columns.
+
+```{r}
+m[2:4, 3:5]
+```
+
+# Question 3
+## Define the variable treatment as a vector of length 100 with elements: (“yes”, “control”, “yes”, “control”, ... , “yes”, “control”)
+
+```{r}
+treatment <- rep(c("yes", "control"), 50)
+```
+
+## Define the variable smoker as a vector of length 100 with elements: (“yes”, ”yes”, ”no”, ”no”, ”no”, ... , “yes”, “yes”, “no”, “no”, “no”)
+
+```{r}
+smoker <- rep(c("yes", "yes", "no", "no", "no"), 20)
+```
+## Define the vector :
+```{r}
+lifespan <- abs(round(100 * sin(1:100)))
+```
+
+## Create a data frame with treatment, smoker, and lifespan vectors. You may think of lifespan as the life span of the individuals.
+```{r}
+data <- data.frame("treatment" = treatment, "smoker" = smoker, "lifespan" = lifespan)
+```
+
+## Define a new vector x which consists of all elements of lifespan at whose index in smoker is the element "yes". 
+```{r}
+x <- data[data$smoker == "yes", ]$lifespan
+```
+
+## What is the maximum of lifespan over all smokers?
+The maximum lifespan over all smokers is `r max(x)`
+
+
+## Half of the individuals got a certain treatment. Produce a new vector consisting of the lifespans of all individuals which are smokers and got the treatment.
+
+```{r}
+lifespan_smokers_with_treatment <- data[data$smoker == "yes" & data$treatment == "yes", ]$lifespan
+```
+
+
+# Question 4
+## using the Wages data from Ecdat library (also attached as Wages.csv), do the following: Show the top and bottom six rows of the data.
+```{r}
+wages <- read.csv("Wages.csv")
+wages$X <- NULL
+```
+
+```{r}
+rbind(head(n = 6, wages), tail(n = 6, wages))
+```
+
+## How would you calculate the relative proportion (in percentages) of male and female workers?
+```{r}
+prop.table(table(wages$sex)) * 100
+```
+
+
+## How do you calculate these proportions separately for workers in the south (yes, no)? 
+
+```{r}
+prop.table(table(subset(wages, select = c("south", "sex"))), margin = 1) * 100
+```
+
+## How do you calculate these proportions for all workers with an lwage larger than 6.5?
+
+```{r}
+x <- wages[wages$lwage > 6.5, ]
+
+prop.table(table(subset(x, select = c("south", "sex"))), margin = 1) * 100
+```
+
+
+
+# Question 5
+> You again use the dataset Wages. Use the command aggregate() to construct a data frame
+> with three columns: In one column you have ed, in the second column you have sex, and in the
+> third column you have for each possible combination of ed and sex the median of lwage for
+> this combination. Since there are only 14 levels of ed and only two levels of sex, your new data
+> frame will have at most 28 rows. How many rows does your data frame actually have? Why does
+> it have fewer than 28 rows?
+
+```{r}
+aggregate_lwage <- aggregate(lwage ~ ed + sex, data = wages, FUN = median)
+```
+
+
+The data frame only has `r nrow(aggregate_lwage)` rows. This is because some combinations of the data do not
+exist. In this case (ed:4, sex:female), (ed:5, sex:female) and (ed:6, sex:female) do not exist. This is the reason why there are 3 less rows.

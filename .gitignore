@@ -1,0 +1,7 @@
+./.direnv/*
+**/*_cache
+
+**/*.csv
+**/*.tsv
+
+**/reads/*.bam

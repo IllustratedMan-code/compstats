@@ -1,0 +1,123 @@
+---
+title: Homework 5
+author: David Lewis
+date: April 17, 2025
+---
+
+
+# Question 1
+
+Confidence intervals in bayesian inference take into account prior knowledge, so a confidence interval in bayseian inference 
+gives the probability of an unknown parameter lying within an interval given the observed data. Traditional inference on the other hand
+makes the assumption that the data is a random sample of a larger distribution, so confidence intervals are less meaningful.
+
+
+# Question 2
+
+```{r}
+x = c(
+    2, 2, 3, 1, 3, 3, 4, 2, 3, 1, 3, 5, 2, 2, 4, 4, 2, 2, 2, 4, 3, 4, 3, 4, 2, 1, 4, 5, 3, 2, 3, 6, 2, 6,
+    4, 5, 1, 3, 8, 1, 2, 5, 4, 5, 3, 3, 4, 5, 2, 2, 2, 1, 2, 2, 3, 2, 1, 2, 3, 2, 3, 3, 6, 4, 3, 2, 3, 3, 2, 4,
+    2, 2, 3, 7, 4, 3, 5, 4, 5, 1, 3, 3, 6, 7, 0, 3, 4, 2, 2, 4, 5, 2, 2, 3, 5, 2, 3, 1, 0, 4
+)
+```
+
+The normal distribution is not bounded by 0 like x appears to be (no negative values) and the values
+are integers, implying some kind of categorical data. The data also has a positive or right skew, meaning that the tail is on the right.
+
+For these reasons, a normal distribution is not an ideal distribution for this data.
+
+# Question 3
+
+```{r}
+log_likelihood <- function(lambda) {
+    sum(dpois(x, lambda = lambda, log = TRUE))
+}
+log_likelihood(1)
+```
+
+The value of the likelihood function at $\lambda = 1$ is `r log_likelihood(1)`.
+
+## Plot
+
+```{r}
+range <- seq(0, 10, by = 0.1)
+likelihood_range <- sapply(range, log_likelihood)
+
+plot(range, likelihood_range, type = "l")
+```
+
+# Question 4
+
+Since the interval for $\lambda$ is bounded by the interval (0, 10), a reasonable choice for the prior distribution is a uniform distribution bounded at 0 and 10.
+This way, any real lambda is possible within these bounds. Since no other knowledge about $\lambda$ is available, the uniform distribution is the best (naive) choice.
+
+# Question 5
+
+```{r}
+norm_prior <- function(lambda) {
+    dnorm(lambda, mean = 8, sd = 2, log = TRUE)
+}
+
+norm_range <- sapply(range, norm_prior)
+plot(range, norm_range, type = "l")
+```
+
+# Question 6
+```{r}
+log_posterior <- function(lambda) {
+    log_likelihood(lambda) + norm_prior(lambda)
+}
+```
+
+# Question 7
+```{r}
+proposalFunctionPoiss <- function(theta.old) {
+    max(rnorm(1, mean = theta.old, sd = c(1)), 0) # relu?
+}
+
+
+MCMC <- function(theta.start, N) {
+    sample <- array(dim = c(N, 1))
+    theta.old <- theta.start
+    for (i in 1:N) {
+        theta.new <- proposalFunctionPoiss(theta.old)
+        p <- exp(log_posterior(theta.new) - log_posterior(theta.old))
+        if (runif(1) < p) {
+            sample[i] <- theta.new
+            theta.old <- sample[i]
+        } else {
+            sample[i] <- theta.old
+        }
+    }
+    return(sample)
+}
+
+theta.start <- 1
+```
+
+# Question 8
+
+```{r}
+chain <- MCMC(theta.start, 10000)
+# burnin <- 5000
+# chain <- chain[1:burnin] didn't seem to have much effect, so I'll leave it off
+hist(chain, nclass = 30, , main = "Posterior of Lambda", xlab = "True value = red line")
+abline(v = mean(chain), col = "red")
+```
+
+```{r}
+median(chain)
+quantile(chain, prob = c(0.025, 0.975))
+```
+
+# Question 9
+```{r}
+batchmeans::ess(chain)
+batchmeans::estvssamp(chain)
+```
+
+The quality of the estimate does not signficantly change after 4000 samples, and only changes slighty after the effective samples size.
+
+That being said, the rate of convergence is not particularly high, indicating that the sample may not be the best quality.
+

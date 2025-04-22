@@ -1,0 +1,105 @@
+---
+title: Homework 1
+author: David Lewis
+date: January 30, 2025
+---
+
+
+## load the data
+```{r}
+studentdata <- LearnBayes::studentdata
+```
+
+## 1. Size of the data
+```{r}
+cat(paste("number of rows=", nrow(studentdata), "\nnumber of columns=", ncol(studentdata), sep=""))
+```
+
+## 2. Top 6 rows of the data
+```{r}
+head(studentdata, n=6)
+```
+
+## 3.  Pull out the complete data of Students 4, 22, 517, and 533.
+```{r}
+studentdata[studentdata["Student"] %in% c(4, 22, 517, 533)]
+```
+
+## 4. Using the documentation command, describe each variable in the data.
+```{r help, message=FALSE}
+library(printr)
+?LearnBayes::studentdata
+```
+The description for each variable is under the "format" section of the above output.
+
+
+## 5. What is the nature of each variable?
+```{r}
+data.frame("class" = sapply(studentdata, class))
+```
+
+## 6. Show the summary statistics of each variable.
+```{r}
+summary(studentdata)
+```
+
+## 7. What is the gender distribution?
+```{r}
+summary(studentdata$Gender)
+```
+
+## 8. What is the most favorite number of the students?
+```{r}
+sort(table(studentdata$Number), decreasing=TRUE)
+```
+The most favorite number of the students is 7
+
+## 9. What is the second most favorite number of the students?
+The second favorite number is 5.
+
+## 10. What is the least favorite number of students?
+The least favorite number is 10.
+
+## 11. Use the ‘table’ command on ‘studentdata$Shoes’ and show the output.
+```{r}
+table(studentdata$Shoes)
+```
+
+
+## 12. What is unusual about the output in 11?
+
+One interesting thing is that some students seem to have an extra shoe that does not belong to a pair.
+
+These data also appear to be spread out in a strange way. While it is true that the second most common number
+of pairs of shoes is 10, and most other students have a similar number of shoes, there are a relatively large number of students
+with 20 pairs of shoes.
+
+```{r}
+plot(table(studentdata$Shoes), xlab="number of shoes", ylab="number of students")
+```
+
+Plotting the data shows that while much of the data fits a gaussian distribution, there are many "spikes" that don't fit the distribution.
+
+## 13. Use the ‘table’ command on ‘studentdata$Drink.’
+
+```{r}
+table(studentdata$Drink)
+
+```
+
+## 14. Cross-tabulate ‘Gender’ and ‘Drink.’
+```{r}
+genderDrink <- table(studentdata$Gender, studentdata$Drink)
+```
+
+## 15. Calculate proportions row-wise and column-wise as well and correct to two decimal places.
+
+### Row-wise
+```{r}
+round(prop.table(genderDrink, 1), 2)
+```
+
+### Column-wise
+```{r}
+round(prop.table(genderDrink, 2), 2)
+```
