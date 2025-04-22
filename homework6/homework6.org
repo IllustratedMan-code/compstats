@@ -1,0 +1,305 @@
+#+title: Homework 6
+#+options: toc:nil num:nil
+#+begin_export typst
+#import "assignment.typ": conf
+#show: doc => conf(title: "Homework 6", doc)
+#+end_export
+
+#+begin_src R :session R :results output
+x <- scan("rabbitblood.txt")
+#+end_src
+
+#+RESULTS:
+: Read 40 items
+
+* Question 1
+
+#+begin_src R :session R :results output
+BootstrapMSEmean=function(x,reps){
+    n=length(x);
+    thetahat=mean(x);
+    thetahatbootstrap=rep(0,reps);
+    for(i in 1:reps){
+    xbootstrap=sample(x,n,replace=TRUE);
+    #bootstrap sample
+    thetahatbootstrap[i]=mean(xbootstrap)
+    #sample mean for bootstrap sample
+    }
+    MSE=sum((thetahatbootstrap-thetahat)^2)/reps;
+    MSE;
+}
+
+margin_of_error <- function(MSE){
+    2 * sqrt(MSE)
+}
+
+MSE <- BootstrapMSEmean(x, 10000)
+print(sprintf("MSE=%f", MSE ))
+print(sprintf("Margin of Error=%f", margin_of_error(MSE)))
+#+end_src
+
+#+RESULTS:
+: [1] "MSE=84.443171"
+: [1] "Margin of Error=18.378593"
+
+
+* Question 2
+
+#+begin_src R :session R :results output
+BootstrapBiasmean=function(x,reps){
+    n=length(x);
+    thetahat=mean(x);
+    thetahatbootstrap=rep(0,reps);
+    for(i in 1:reps){
+		    xbootstrap=sample(x,n,replace=TRUE);
+		    #bootstrap sample
+		    thetahatbootstrap[i]=mean(xbootstrap)
+		    #sample mean for bootstrap sample
+    }
+    Ehat=sum(thetahatbootstrap)/reps
+    Bhat=Ehat - thetahat
+    Bhat;
+}
+
+Bias <- BootstrapBiasmean(x, 10000)
+print(sprintf("Bias=%f", Bias ))
+#+end_src
+
+#+RESULTS:
+: [1] "Bias=-0.121045"
+
+
+* Question 3
+
+#+begin_src R :session R :results output
+BootstrapMSEmedian=function(x,reps){
+    n=length(x);
+    thetahat=median(x);
+    thetahatbootstrap=rep(0,reps);
+    for(i in 1:reps){
+    xbootstrap=sample(x,n,replace=TRUE);
+    #bootstrap sample
+    thetahatbootstrap[i]=median(xbootstrap)
+    #sample median for bootstrap sample
+    }
+    MSE=sum((thetahatbootstrap-thetahat)^2)/reps;
+    MSE;
+}
+
+margin_of_error <- function(MSE){
+    2 * sqrt(MSE)
+}
+
+MSE <- BootstrapMSEmedian(x, 10000)
+print(sprintf("MSE=%f", MSE ))
+print(sprintf("Margin of Error=%f", margin_of_error(MSE)))
+#+end_src
+
+#+RESULTS:
+: [1] "MSE=85.334650"
+: [1] "Margin of Error=18.475351"
+
+
+* Question 4
+
+#+begin_src R :session R :results output
+Bootstrapmeaninterval=function(x,reps,level){
+    n=length(x)
+    meanx=mean(x)
+    sdx=sd(x)
+    v=rep(0,reps)
+    for(i in 1:reps){
+	    xbootstrap=sample(x,n,replace=TRUE)
+	    #bootstrap sample
+	    bootstrapmean=mean(xbootstrap)
+	    bootstrapsd=sd(xbootstrap)
+	    v[i]=(bootstrapmean-meanx)/(bootstrapsd/sqrt(n))
+    }
+    alpha=1-level
+    lower=quantile(v,alpha/2)
+    upper=quantile(v,1-alpha/2)
+    left=meanx-upper*sdx/sqrt(n)
+    right=meanx-lower*sdx/sqrt(n)
+    c(left,right)
+}
+
+Bootstrapmeaninterval(x, 10000, 0.90)
+#+end_src
+
+#+RESULTS:
+:      95%       5% 
+: 110.9523 142.2192
+
+
+* Question 5
+
+As this is population variance instead of sample variance, we need to change n-1 to n in the example
+from the slides.
+#+begin_src R :session R :results output
+BootstrapVarianceinterval=function(x,reps,level){
+    n=length(x)
+    meanx=mean(x)
+    sdx=sd(x)
+    v=rep(0,reps)
+    for(i in 1:reps){
+	    xbootstrap=sample(x,n,replace=TRUE)
+	    #bootstrap sample
+	    bootstrapmean=mean(xbootstrap)
+	    bootstrapsd=sd(xbootstrap)
+	    v[i]= ((n)*(bootstrapsd)^2)/(sdx)^2
+    }
+    alpha=1-level
+    lower=quantile(v,alpha/2)
+    upper=quantile(v,1-alpha/2)
+    left=(n)*sdx^2/upper
+    right=(n)*sdx^2/lower
+    c(left,right)
+}
+BootstrapVarianceinterval(x, 10000, 0.95)
+#+end_src
+
+#+RESULTS:
+:   97.5%    2.5% 
+: 2214.01 7056.59
+
+
+* Question 6
+
+#+begin_src R :session R :results output
+height <- read.table("height.txt")
+x <- height$V1
+y <- height$V2
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :session R :results output
+BootstrapCorrCI=function(x, y, reps, level){
+    reps = 1000
+    n=length(x)
+    thetahat=cor(x,y)
+    thetahatbootstrap=rep(0,reps)
+    for(i in 1:reps){
+	    bootstrap_index=sample(1:n,n,replace=TRUE)
+	    xbootstrap = x[bootstrap_index]
+	    #bootstrap sample x
+	    ybootstrap = y[bootstrap_index]
+	    #bootstrap sample y
+    if((var(xbootstrap)!=0)&(var(ybootstrap)!=0)){
+	    thetahatbootstrap[i]=cor(xbootstrap, ybootstrap)
+	    #sample corr for bootstrap sample
+	    }
+    }
+    alpha = 1-level
+    lower = alpha/2
+    upper = 1-alpha/2
+    quantile(thetahatbootstrap, prob = c(lower, upper), na.rm = TRUE)
+}
+
+BootstrapCorrCI(x, y, 10000, 0.95)
+
+
+#+end_src
+
+#+RESULTS:
+:      2.5%     97.5% 
+: 0.3166996 0.7574018
+
+
+* Question 7
+
+#+begin_src R :session R :results output
+confint <- function(x, y, level){
+  fit <- lm(y~x)
+  alpha = 1-level
+  e = fit$residuals
+  sx = sd(x)
+  n=length(x)
+  SE=sqrt(sum(e^2)/((n-2)*(n-1)*(sx^2)))
+  left = fit$coef[2]-SE*qt(1-alpha/2, n-2)
+  right = fit$coef[2]-SE*qt(alpha/2, n-2)
+  names(left) <- sprintf("%.3f%%",1-alpha/2)
+  names(right) <- sprintf("%.3f%%",alpha/2)
+  c(left, right)
+}
+
+confint(x, y, 0.95)
+#+end_src
+#+RESULTS:
+:    0.975%    0.025% 
+: 0.3519083 1.1073067
+
+
+
+* Question 8
+
+In method 1, X and Y are both assumed to be random. In this assumption, X and Y pairs are randomly resampled.
+
+In method 2, X is assumed to not be random, but Y is considered to be random. $\hat h$ is calulated to obtain observed errors which help
+create a better estimate for Y as X is assumed to be related to Y.
+
+* Question 9
+
+#+begin_src R :session R :results output :wrap src results
+fit <- lm(y~x)
+
+sprintf("The estimate of B_0 = %f", fit$coef[1])
+sprintf("The estimate of B_1 = %f", fit$coef[2])
+#+end_src
+
+#+RESULTS:
+#+begin_src R
+[1] "The estimate of B_0 = 17.131183"
+[1] "The estimate of B_1 = 0.729607"
+#+end_src
+
+
+* Question 10
+This uses method 2 and assumes that X is fixed (not normal).
+#+begin_src R :session R :results output
+
+SEbeta1=function(x,y){
+    fit=lm(y~x)
+    e=fit$residuals
+    sx=sd(x)
+    n=length(x)
+    sqrt(sum(e^2)/((n-2)*(n-1)*(sx^2)))
+}
+
+bootstrapbeta1=function(x,y,reps,level = 0.95){
+    fit=lm(y~x)
+    e=fit$residuals
+    sx=sd(x)
+    tb=rep(0,reps)
+    for(i in 1:reps){
+	    eb = sample(e,replace=TRUE)
+	    yb = fit$coef[1] + fit$coef[2]*x + eb
+	    fitb=lm(yb~x);
+	    tb[i]=(fitb$coef[2] - fit$coef[2])/SEbeta1(x,yb)
+    }
+    alpha=1-level
+    left=fit$coef[2]-SEbeta1(x,y)*quantile(tb,1-alpha/2)
+    right=fit$coef[2]-SEbeta1(x,y)*quantile(tb,alpha/2)
+    names(left) <- sprintf("%.3f%%",1-alpha/2)
+    names(right) <- sprintf("%.3f%%",alpha/2)
+    c(left,right)
+}
+
+bootstrapbeta1(x, y, 10000, level=0.95)
+#+end_src
+
+#+RESULTS:
+: 0.975%    0.025% 
+: 0.3510731 1.1121460
+
+
+#+begin_src elisp
+(defun org-typst-code (code _contents info)
+  (when-let* ((code-text (org-element-property :value code)))
+    (org-typst--raw code-text code info t)))
+(defun org-typst-fixed-width (fixed-width _contents info)
+  (org-typst--raw (org-element-property :value fixed-width) fixed-width info))
+#+end_src
+
+#+RESULTS:
+: org-typst-code
