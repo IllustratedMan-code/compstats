@@ -42,6 +42,11 @@ Project/Project-presentation.html: Project/Project.rmd
 
 project: Project/Project.html Project/Project-presentation.html Project/Project.pdf
 
+Exam2/exam2.pdf: Exam2/exam2.rmd
+	Rscript -e "rmarkdown::render('$<', output_format='pdf_document')"
+
+exam2: Exam2/exam2.pdf
+
 homework1: homework1/homework1.pdf
 
 homework2: homework2/homework2.pdf

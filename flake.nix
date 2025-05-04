@@ -25,6 +25,9 @@
                   batchmeans
                   DiffBind
                   profileplyr
+                  caret
+                  randomForest
+                  ggpubr
                 ];
               })
             ];

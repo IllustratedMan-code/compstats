@@ -1,0 +1,216 @@
+---
+title: Exam 2
+author: David Lewis
+date: May 1, 2025
+---
+
+# Problem 1
+
+```{r}
+load("mcmcSamples.RData")
+```
+
+
+## Length
+```{r}
+print(sprintf("The length of sample1Final is: %i", length(sample1Final)))
+print(sprintf("The length of sample2Final is: %i", length(sample2Final)))
+```
+
+## effective sample size
+```{r}
+print(sprintf("The effective sample size of sample1Final is: %f", batchmeans::ess(sample1Final)))
+print(sprintf("The effective sample size of sample2Final is: %f", batchmeans::ess(sample2Final)))
+```
+
+## auto correlation plots
+
+### Sample1Final Autocorrelation
+```{r}
+acf(sample1Final)
+```
+
+### Sample2Final Autocorrelation
+
+```{r}
+acf(sample2Final)
+```
+
+## Estimate as samples increase
+```{r}
+# plotting function
+mean_by_sample_size <- function(sample, title) {
+    plot(cumsum(sample) / seq_along(sample), type = "l", main = title, ylab = "(mean) estimate of phi", xlab = "number of samples")
+}
+```
+
+### Sample1Final estimates
+```{r}
+mean_by_sample_size(sample1Final, "sample1Final")
+```
+
+
+### Sample2Final estimates
+```{r}
+mean_by_sample_size(sample2Final, "sample2Final")
+```
+
+
+
+## Which sample is better?
+
+As we can see from the above estimates plot, Sample2Final does not appear to converge as the number of samples increases. 
+Sample1Final on the other hand does not have this problem. The auto correlation plots also show a similar problem with sample2Final.
+Additionally, the ratio of effective sample size to length of sample is much lower in sample2Final, another indicator of low quality.
+
+Final Verdict: Sample1Final is the better sample. 
+
+```{r}
+interval <- 0.95
+
+lower <- (1 - interval) / 2
+upper <- 1 - lower
+
+quantile(sample1Final, c(lower, upper))
+```
+
+
+# Problem 2
+
+```{r}
+load("snail.RData")
+```
+
+
+## What is odd about the height variable?
+```{r}
+pairs(snail[, 1:4])
+```
+
+There is very little variability in the height variable aside from 2 outliers. The vast majority of the height
+measurements are between 0 and 0.2. By contrast, all of the other variables are spread mostly evenly across their axis.
+For example, length and diameter are about evenly correlated, resulting in a structure similar to a line with a slope of one.
+height and diameter, on the other hand, show a structure like a line with a much higher slope.
+
+If the outliers are removed, however, I believe that the height diameter plot would look very similar to the diameter length plot.
+
+The rings variable is actually the most different (lowest correlation) to the other variables.
+
+
+## correlation matrix
+
+```{r}
+cor(snail[, 1:4])
+```
+
+We see that while height is less correlated with the other variables than length or diameter, rings are the least correlated with the other variable.
+
+This is inline with the earlier assumptions about the correlation given the scatter plots.
+
+## Bootstrap
+
+```{r}
+BootstrapCorrCI = function(x, y, reps) {
+    n = length(x)
+    thetahat = cor(x, y)
+    thetahatbootstrap = rep(0, reps)
+    for (i in 1:reps) {
+        bootstrap_index = sample(1:n, n, replace = TRUE)
+        xbootstrap = x[bootstrap_index]
+        # bootstrap sample x
+        ybootstrap = y[bootstrap_index]
+        # bootstrap sample y
+        if ((var(xbootstrap) != 0) & (var(ybootstrap) != 0)) {
+            thetahatbootstrap[i] = cor(xbootstrap, ybootstrap)
+            # sample corr for bootstrap sample
+        }
+    }
+    quantile(thetahatbootstrap, prob = c(0.025, 0.975), na.rm = TRUE)
+}
+
+BootstrapCorrCI(snail$length, snail$rings, reps = 10000)
+```
+
+Bootstrap replicates are samples by preserving the index relationship between any length and rings values. Additionally, bootstrap uses replacement sampling,
+i.e. the same length-ring pair can be picked multiple times. `BootsrapCorrCI` repeatedly creates samples of the same length as 
+the data, essentially creating new replicates from the existing data. In this case, 10000 replicates are created.
+
+
+
+# Problem 3
+```{r}
+indexes <- caret::createDataPartition(snail$rings, p = 0.6, list = FALSE)
+train <- snail[indexes, ]
+test <- snail[-indexes, ]
+
+
+
+model1 <- glm(rings ~ ., data = train)
+model2 <- randomForest::randomForest(rings ~ ., data = train, ntree = 100)
+
+model1_predict <- predict(model1, subset(test, select = -rings))
+model2_predict <- predict(model2, subset(test, select = -rings))
+
+plot(test$rings, model1_predict, xlab = "Observations", ylab = "Model 1 Predictions")
+caret::postResample(model1_predict, test$rings)
+plot(test$rings, model2_predict, xlab = "Observations", ylab = "Model 2 Predictions")
+caret::postResample(model2_predict, test$rings)
+```
+
+
+Given only the plots, I would assume that model 1 performs better; however the postResample output shows that 
+model2 performs slightly beter (RMSE is lower, R^2 is higher).
+
+Both models are underperforming, it is likely that there are many nonlinear effects or other variables needed to accurately predict the number of rings.
+
+
+# Problem 4
+
+## Packages for interactive plots
+One can use **plotly** or **altair**. `Leaflet` can also be used for geospatial data.
+
+## What is dpylr for?
+
+`dpylr` provides a grammar for the most common data manipulation tasks.
+
+For example, it provides the `select` function which allows one to select variables based on their names.
+
+
+## What is leaflet for?
+
+The `leaflet` R package provides an interface to the `leaflet` javascript visualization library for map visualization.
+
+`leaflet` can be used to create interactive maps.
+
+Here is a simple example from their documentation:
+
+```{r, eval=FALSE}
+circles <- data.frame(
+    lng = c(23.59, 34.95, 17.47),
+    lat = c(-3.53, -6.32, -12.24)
+)
+
+leaflet() %>%
+    addTiles() %>%
+    addCircleMarkers(data = circles, color = "red")
+```
+
+## Examples of ggpubr
+
+ggpubr can be used for publication ready plots. Here is an example of a linear regression plot:
+```{r}
+library(ggpubr)
+ggscatter(mtcars,
+    x = "mpg", y = "cyl",
+    add = "reg.line",
+    conf.int = TRUE,
+    add.params = list(
+        color = "blue",
+        fill = "gray"
+    ),
+    cor.coef = TRUE, cor.method = "pearson",
+    ggtheme = theme_minimal()
+)
+```
+
+It can also be used for any ggplot2 related plot, such as histograms, correlation plots, etc.
